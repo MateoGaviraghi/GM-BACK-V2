@@ -1,6 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
-import { MediaFile } from '../../../cloudinary';
+import type { MediaFile } from '../../../cloudinary';
 
 export type UsadoDocument = Usado & Document;
 
@@ -95,6 +95,32 @@ export class Usado {
     default: [],
   })
   videos?: MediaFile[];
+
+  @Prop({
+    type: {
+      url: String,
+      public_id: String,
+      thumbnails: {
+        small: String,
+        medium: String,
+        large: String,
+      },
+    },
+  })
+  fotoSinFondo1?: MediaFile;
+
+  @Prop({
+    type: {
+      url: String,
+      public_id: String,
+      thumbnails: {
+        small: String,
+        medium: String,
+        large: String,
+      },
+    },
+  })
+  fotoSinFondo2?: MediaFile;
 
   createdAt?: Date;
   updatedAt?: Date;

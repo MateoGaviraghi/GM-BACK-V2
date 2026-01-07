@@ -41,6 +41,8 @@ export class UsadosController {
     FileFieldsInterceptor([
       { name: 'imagenes', maxCount: 10 },
       { name: 'videos', maxCount: 5 },
+      { name: 'fotoSinFondo1', maxCount: 1 },
+      { name: 'fotoSinFondo2', maxCount: 1 },
     ]),
   )
   async createWithMedia(
@@ -49,6 +51,8 @@ export class UsadosController {
     files: {
       imagenes?: Express.Multer.File[];
       videos?: Express.Multer.File[];
+      fotoSinFondo1?: Express.Multer.File[];
+      fotoSinFondo2?: Express.Multer.File[];
     },
   ) {
     try {
@@ -60,8 +64,7 @@ export class UsadosController {
 
       const result = await this.usadosService.createWithMedia(
         createUsadoDto,
-        files.imagenes || [],
-        files.videos || [],
+        files,
       );
 
       return {
@@ -204,6 +207,52 @@ export class UsadosController {
       message: 'Vehículo usado actualizado correctamente',
       usado,
     };
+  }
+
+  @Patch(':id/update-with-media')
+  @UseInterceptors(
+    FileFieldsInterceptor([
+      { name: 'imagenes', maxCount: 10 },
+      { name: 'videos', maxCount: 5 },
+      { name: 'fotoSinFondo1', maxCount: 1 },
+      { name: 'fotoSinFondo2', maxCount: 1 },
+    ]),
+  )
+  async updateWithMedia(
+    @Param('id') id: string,
+    @Body() updateUsadoDto: UpdateUsadoDto,
+    @UploadedFiles()
+    files: {
+      imagenes?: Express.Multer.File[];
+      videos?: Express.Multer.File[];
+      fotoSinFondo1?: Express.Multer.File[];
+      fotoSinFondo2?: Express.Multer.File[];
+    },
+  ) {
+    try {
+      const result = await this.usadosService.updateWithMedia(
+        id,
+        updateUsadoDto,
+        files,
+      );
+
+      return {
+        success: true,
+        message:
+          'Vehículo usado actualizado exitosamente con archivos multimedia',
+        data: result,
+      };
+    } catch (error) {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment
+      const message = error.message || 'Error al actualizar el vehículo usado';
+      throw new BadRequestException({
+        success: false,
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        message,
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        error: error,
+      });
+    }
   }
 
   @Patch(':id/status')
