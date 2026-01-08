@@ -97,8 +97,12 @@ export class Usado {
   @Prop({
     type: [
       {
-        url: String,
         public_id: String,
+        secure_url: String,
+        width: Number,
+        height: Number,
+        format: String,
+        bytes: Number,
         thumbnails: {
           small: String,
           medium: String,
@@ -113,8 +117,14 @@ export class Usado {
   @Prop({
     type: [
       {
-        url: String,
         public_id: String,
+        secure_url: String,
+        width: Number,
+        height: Number,
+        format: String,
+        bytes: Number,
+        thumbnail: String,
+        duration: Number,
         thumbnails: {
           small: String,
           medium: String,
@@ -128,8 +138,12 @@ export class Usado {
 
   @Prop({
     type: {
-      url: String,
       public_id: String,
+      secure_url: String,
+      width: Number,
+      height: Number,
+      format: String,
+      bytes: Number,
       thumbnails: {
         small: String,
         medium: String,
@@ -141,8 +155,12 @@ export class Usado {
 
   @Prop({
     type: {
-      url: String,
       public_id: String,
+      secure_url: String,
+      width: Number,
+      height: Number,
+      format: String,
+      bytes: Number,
       thumbnails: {
         small: String,
         medium: String,

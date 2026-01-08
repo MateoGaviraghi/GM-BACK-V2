@@ -286,13 +286,7 @@ export class UsadosService {
         throw new BadRequestException('ID de vehículo usado inválido');
       }
 
-      const usado = await this.usadoModel
-        .findById(id)
-        .populate('imagenes')
-        .populate('videos')
-        .populate('fotoSinFondo1')
-        .populate('fotoSinFondo2')
-        .exec();
+      const usado = await this.usadoModel.findById(id).exec();
       if (!usado) {
         throw new NotFoundException(
           `Vehículo usado con ID ${id} no encontrado`,
