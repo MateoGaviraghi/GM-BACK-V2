@@ -6,6 +6,7 @@ import {
   IsIn,
   MinLength,
   Min,
+  IsArray,
 } from 'class-validator';
 
 export class CreateUsadoDto {
@@ -31,6 +32,14 @@ export class CreateUsadoDto {
   modelo!: string;
 
   @IsOptional()
+  @IsString()
+  version?: string;
+
+  @IsOptional()
+  @IsString()
+  tipoVehiculo?: string;
+
+  @IsOptional()
   @IsNumber()
   @Min(0)
   kilometraje?: number;
@@ -53,11 +62,27 @@ export class CreateUsadoDto {
 
   @IsOptional()
   @IsString()
+  transmision?: string;
+
+  @IsOptional()
+  @IsString()
   tracciones?: string;
 
   @IsOptional()
   @IsString()
+  traccion?: string;
+
+  @IsOptional()
+  @IsString()
   potenciaMaxima?: string;
+
+  @IsOptional()
+  @IsString()
+  potencia?: string;
+
+  @IsOptional()
+  @IsString()
+  cilindrada?: string;
 
   @IsOptional()
   @IsString()
@@ -70,6 +95,23 @@ export class CreateUsadoDto {
   @IsOptional()
   @IsString()
   ejes?: string;
+
+  @IsOptional()
+  @IsString()
+  color?: string;
+
+  @IsOptional()
+  @IsNumber()
+  cantidadPuertas?: number;
+
+  @IsOptional()
+  @IsNumber()
+  cantidadAsientos?: number;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  equipamiento?: string[];
 
   @IsOptional()
   @IsIn(['Disponible', 'Reservado', 'Vendido'])

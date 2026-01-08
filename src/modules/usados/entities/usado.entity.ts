@@ -24,6 +24,12 @@ export class Usado {
   @Prop({ required: true, trim: true })
   modelo!: string;
 
+  @Prop({ trim: true })
+  version?: string;
+
+  @Prop({ trim: true })
+  tipoVehiculo?: string;
+
   @Prop({ min: 0 })
   kilometraje?: number;
 
@@ -40,10 +46,22 @@ export class Usado {
   transmisiones?: string;
 
   @Prop({ trim: true })
+  transmision?: string;
+
+  @Prop({ trim: true })
   tracciones?: string;
 
   @Prop({ trim: true })
+  traccion?: string;
+
+  @Prop({ trim: true })
   potenciaMaxima?: string;
+
+  @Prop({ trim: true })
+  potencia?: string;
+
+  @Prop({ trim: true })
+  cilindrada?: string;
 
   @Prop({ trim: true })
   capacidadCarga?: string;
@@ -53,6 +71,18 @@ export class Usado {
 
   @Prop({ trim: true })
   ejes?: string;
+
+  @Prop({ trim: true })
+  color?: string;
+
+  @Prop()
+  cantidadPuertas?: number;
+
+  @Prop()
+  cantidadAsientos?: number;
+
+  @Prop({ type: [String], default: [] })
+  equipamiento?: string[];
 
   @Prop({
     type: String,
