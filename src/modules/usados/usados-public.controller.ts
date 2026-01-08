@@ -343,12 +343,11 @@ export class UsadosPublicController {
         addTableRow('Cantidad de Asientos', String(usado.cantidadAsientos));
     }
 
-    // CONDICIÓN
-    if (usado.condicion || usado.estado) {
+    // ESTADO
+    if (usado.estado) {
       y += 10;
       addTableRow('ESTADO', '', true);
 
-      if (usado.condicion) addTableRow('Condición', usado.condicion);
       if (usado.estado) addTableRow('Estado', usado.estado);
     }
 
