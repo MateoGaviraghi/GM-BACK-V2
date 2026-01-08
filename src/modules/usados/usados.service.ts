@@ -247,10 +247,10 @@ export class UsadosService {
       query.where('kilometraje').lte(ranges.kilometrajeMax);
     }
     if (ranges.anioFrom) {
-      query.where('anio').gte(new Date(ranges.anioFrom).getTime());
+      query.where('anio').gte(Number(ranges.anioFrom));
     }
     if (ranges.anioTo) {
-      query.where('anio').lte(new Date(ranges.anioTo).getTime());
+      query.where('anio').lte(Number(ranges.anioTo));
     }
 
     const skip = Math.max(0, (page - 1) * limit);
@@ -798,10 +798,10 @@ export class UsadosService {
       query = query.where('kilometraje').lte(ranges.kilometrajeMax);
     }
     if (ranges.anioFrom) {
-      query = query.where('anio').gte(new Date(ranges.anioFrom).getTime());
+      query = query.where('anio').gte(Number(ranges.anioFrom));
     }
     if (ranges.anioTo) {
-      query = query.where('anio').lte(new Date(ranges.anioTo).getTime());
+      query = query.where('anio').lte(Number(ranges.anioTo));
     }
 
     const skip = Math.max(0, (page - 1) * limit);
