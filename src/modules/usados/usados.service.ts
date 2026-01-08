@@ -373,42 +373,34 @@ export class UsadosService {
       // 3. Eliminar imágenes marcadas para eliminar
       if (
         Array.isArray(updateUsadoDto.imagenesAEliminar) &&
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         updateUsadoDto.imagenesAEliminar.length > 0
       ) {
         for (const publicId of updateUsadoDto.imagenesAEliminar) {
           try {
-            await this.cloudinaryService.deleteMedia(publicId as string);
+            await this.cloudinaryService.deleteMedia(publicId);
           } catch (error) {
             console.error(`Error al eliminar imagen ${publicId}:`, error);
           }
         }
         usado.imagenes = (usado.imagenes || []).filter(
-          (img) =>
-            !(updateUsadoDto.imagenesAEliminar as string[])?.includes(
-              img.public_id,
-            ),
+          (img) => !updateUsadoDto.imagenesAEliminar?.includes(img.public_id),
         );
       }
 
       // 4. Eliminar videos marcados para eliminar
       if (
         Array.isArray(updateUsadoDto.videosAEliminar) &&
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         updateUsadoDto.videosAEliminar.length > 0
       ) {
         for (const publicId of updateUsadoDto.videosAEliminar) {
           try {
-            await this.cloudinaryService.deleteMedia(publicId as string);
+            await this.cloudinaryService.deleteMedia(publicId);
           } catch (error) {
             console.error(`Error al eliminar video ${publicId}:`, error);
           }
         }
         usado.videos = (usado.videos || []).filter(
-          (vid) =>
-            !(updateUsadoDto.videosAEliminar as string[])?.includes(
-              vid.public_id,
-            ),
+          (vid) => !updateUsadoDto.videosAEliminar?.includes(vid.public_id),
         );
       }
 
