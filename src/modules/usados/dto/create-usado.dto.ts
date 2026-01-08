@@ -8,6 +8,7 @@ import {
   Min,
   IsArray,
 } from 'class-validator';
+import { Transform } from 'class-transformer';
 
 export class CreateUsadoDto {
   @IsOptional()
@@ -111,6 +112,16 @@ export class CreateUsadoDto {
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      try {
+        return JSON.parse(value);
+      } catch {
+        return [];
+      }
+    }
+    return value;
+  })
   equipamiento?: string[];
 
   @IsOptional()
