@@ -39,8 +39,8 @@ export class Usado {
   @Prop({ trim: true })
   motor?: string;
 
-  @Prop({ type: Date })
-  anio?: Date;
+  @Prop({ type: Number })
+  anio?: number;
 
   @Prop({ trim: true })
   transmisiones?: string;
