@@ -180,7 +180,7 @@ export class UsadosPublicController {
       usado.marca,
       usado.modelo,
       usado.version,
-      usado.anio ? `${usado.anio}` : null,
+      usado.anio ? new Date(usado.anio).getFullYear().toString() : null,
     ]
       .filter((x) => x)
       .join(' | ');
@@ -313,7 +313,8 @@ export class UsadosPublicController {
 
     // Datos generales
     if (usado.tipoVehiculo) addTableRow('Tipo de Vehículo', usado.tipoVehiculo);
-    if (usado.anio) addTableRow('Año', String(usado.anio));
+    if (usado.anio)
+      addTableRow('Año', new Date(usado.anio).getFullYear().toString());
     if (usado.version) addTableRow('Versión', usado.version);
     if (usado.color) addTableRow('Color', usado.color);
     if (usado.kilometraje)
