@@ -107,8 +107,8 @@ export class Remolque {
   @Prop({ type: String, required: false })
   modelo?: string; // Ej: "A4BV"
 
-  @Prop({ type: Date, required: false })
-  anio?: Date;
+  @Prop({ type: Number, required: false })
+  anio?: number;
 
   @Prop({ type: String, required: false })
   tipoCarroceria?: string; // Ej: "Baranda Volcable", "Batea", "Paquetera"

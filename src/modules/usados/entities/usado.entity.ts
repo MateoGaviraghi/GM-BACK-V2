@@ -1,6 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
-import { MediaFile } from '../../../cloudinary';
+import type { MediaFile } from '../../../cloudinary';
 
 export type UsadoDocument = Usado & Document;
 
@@ -24,6 +24,12 @@ export class Usado {
   @Prop({ required: true, trim: true })
   modelo!: string;
 
+  @Prop({ trim: true })
+  version?: string;
+
+  @Prop({ trim: true })
+  tipoVehiculo?: string;
+
   @Prop({ min: 0 })
   kilometraje?: number;
 
@@ -33,17 +39,29 @@ export class Usado {
   @Prop({ trim: true })
   motor?: string;
 
-  @Prop({ type: Date })
-  anio?: Date;
+  @Prop({ type: Number })
+  anio?: number;
 
   @Prop({ trim: true })
   transmisiones?: string;
 
   @Prop({ trim: true })
+  transmision?: string;
+
+  @Prop({ trim: true })
   tracciones?: string;
 
   @Prop({ trim: true })
+  traccion?: string;
+
+  @Prop({ trim: true })
   potenciaMaxima?: string;
+
+  @Prop({ trim: true })
+  potencia?: string;
+
+  @Prop({ trim: true })
+  cilindrada?: string;
 
   @Prop({ trim: true })
   capacidadCarga?: string;
@@ -53,6 +71,18 @@ export class Usado {
 
   @Prop({ trim: true })
   ejes?: string;
+
+  @Prop({ trim: true })
+  color?: string;
+
+  @Prop()
+  cantidadPuertas?: number;
+
+  @Prop()
+  cantidadAsientos?: number;
+
+  @Prop({ type: [String], default: [] })
+  equipamiento?: string[];
 
   @Prop({
     type: String,
@@ -67,8 +97,12 @@ export class Usado {
   @Prop({
     type: [
       {
-        url: String,
         public_id: String,
+        secure_url: String,
+        width: Number,
+        height: Number,
+        format: String,
+        bytes: Number,
         thumbnails: {
           small: String,
           medium: String,
@@ -83,8 +117,14 @@ export class Usado {
   @Prop({
     type: [
       {
-        url: String,
         public_id: String,
+        secure_url: String,
+        width: Number,
+        height: Number,
+        format: String,
+        bytes: Number,
+        thumbnail: String,
+        duration: Number,
         thumbnails: {
           small: String,
           medium: String,
@@ -95,6 +135,40 @@ export class Usado {
     default: [],
   })
   videos?: MediaFile[];
+
+  @Prop({
+    type: {
+      public_id: String,
+      secure_url: String,
+      width: Number,
+      height: Number,
+      format: String,
+      bytes: Number,
+      thumbnails: {
+        small: String,
+        medium: String,
+        large: String,
+      },
+    },
+  })
+  fotoSinFondo1?: MediaFile;
+
+  @Prop({
+    type: {
+      public_id: String,
+      secure_url: String,
+      width: Number,
+      height: Number,
+      format: String,
+      bytes: Number,
+      thumbnails: {
+        small: String,
+        medium: String,
+        large: String,
+      },
+    },
+  })
+  fotoSinFondo2?: MediaFile;
 
   createdAt?: Date;
   updatedAt?: Date;

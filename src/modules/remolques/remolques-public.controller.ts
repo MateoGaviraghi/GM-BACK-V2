@@ -389,16 +389,19 @@ export class RemolquesPublicController {
         addTableRow('Pintura', remolque.carroceria.pintura);
     }
 
-    // Segunda imagen en la página 2 (si hay espacio)
-    if (remolque.imagenes && remolque.imagenes.length > 1 && y < 520) {
+    // Segunda imagen en la página 2 (si hay espacio) - Usar foto sin fondo si existe
+    const secondImageUrl =
+      remolque.fotoSinFondo2?.secure_url || remolque.imagenes?.[1]?.secure_url;
+
+    if (secondImageUrl && y < 520) {
       y += 20;
       try {
         const axios = (await import('axios')).default;
-        const response = await axios.get(remolque.imagenes[1].secure_url, {
+        const response = await axios.get(secondImageUrl, {
           responseType: 'arraybuffer',
         });
         const imageBuffer = Buffer.from(response.data);
-        doc.image(imageBuffer, 50, y, { width: 495, height: 180 });
+        doc.image(imageBuffer, 50, y, { fit: [495, 180], align: 'center' });
       } catch (error) {
         console.error('Error loading second image:', error);
       }

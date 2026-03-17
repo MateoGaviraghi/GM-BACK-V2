@@ -40,15 +40,21 @@ export class UsadosService {
 
   async createWithMedia(
     createUsadoDto: CreateUsadoDto,
-    imageFiles: Express.Multer.File[],
-    videoFiles: Express.Multer.File[],
+    files: {
+      imagenes?: Express.Multer.File[];
+      videos?: Express.Multer.File[];
+      fotoSinFondo1?: Express.Multer.File[];
+      fotoSinFondo2?: Express.Multer.File[];
+    },
   ) {
     const uploadedImages: MediaFile[] = [];
     const uploadedVideos: MediaFile[] = [];
+    let uploadedFotoSinFondo1: MediaFile | undefined;
+    let uploadedFotoSinFondo2: MediaFile | undefined;
 
     try {
-      if (imageFiles && imageFiles.length > 0) {
-        for (const imageFile of imageFiles) {
+      if (files.imagenes && files.imagenes.length > 0) {
+        for (const imageFile of files.imagenes) {
           try {
             const uploadedImage = await this.cloudinaryService.uploadImage(
               imageFile,
@@ -64,8 +70,8 @@ export class UsadosService {
         }
       }
 
-      if (videoFiles && videoFiles.length > 0) {
-        for (const videoFile of videoFiles) {
+      if (files.videos && files.videos.length > 0) {
+        for (const videoFile of files.videos) {
           try {
             const uploadedVideo = await this.cloudinaryService.uploadVideo(
               videoFile,
@@ -82,10 +88,48 @@ export class UsadosService {
         }
       }
 
+      if (files.fotoSinFondo1 && files.fotoSinFondo1.length > 0) {
+        try {
+          uploadedFotoSinFondo1 = await this.cloudinaryService.uploadImage(
+            files.fotoSinFondo1[0],
+            'usados/fotos-sin-fondo',
+          );
+        } catch (error) {
+          await this.cleanupUploadedFiles(uploadedImages, uploadedVideos);
+          throw new BadRequestException(
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+            `Error al subir fotoSinFondo1: ${error.message || 'Error desconocido'}`,
+          );
+        }
+      }
+
+      if (files.fotoSinFondo2 && files.fotoSinFondo2.length > 0) {
+        try {
+          uploadedFotoSinFondo2 = await this.cloudinaryService.uploadImage(
+            files.fotoSinFondo2[0],
+            'usados/fotos-sin-fondo',
+          );
+        } catch (error) {
+          await this.cleanupUploadedFiles(uploadedImages, uploadedVideos);
+          if (uploadedFotoSinFondo1) {
+            await this.cloudinaryService
+              .deleteMedia(uploadedFotoSinFondo1.public_id)
+              .catch(() => {});
+          }
+          throw new BadRequestException(
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+            `Error al subir fotoSinFondo2: ${error.message || 'Error desconocido'}`,
+          );
+        }
+      }
+
       const usadoData = {
         ...createUsadoDto,
+        estado: createUsadoDto.estado || 'Disponible',
         imagenes: uploadedImages,
         videos: uploadedVideos,
+        fotoSinFondo1: uploadedFotoSinFondo1,
+        fotoSinFondo2: uploadedFotoSinFondo2,
       };
 
       const usado = await this.usadoModel.create(usadoData);
@@ -93,6 +137,16 @@ export class UsadosService {
       return usado;
     } catch (error) {
       await this.cleanupUploadedFiles(uploadedImages, uploadedVideos);
+      if (uploadedFotoSinFondo1) {
+        await this.cloudinaryService
+          .deleteMedia(uploadedFotoSinFondo1.public_id)
+          .catch(() => {});
+      }
+      if (uploadedFotoSinFondo2) {
+        await this.cloudinaryService
+          .deleteMedia(uploadedFotoSinFondo2.public_id)
+          .catch(() => {});
+      }
       if (error instanceof BadRequestException) {
         throw error;
       }
@@ -193,10 +247,10 @@ export class UsadosService {
       query.where('kilometraje').lte(ranges.kilometrajeMax);
     }
     if (ranges.anioFrom) {
-      query.where('anio').gte(new Date(ranges.anioFrom).getTime());
+      query.where('anio').gte(Number(ranges.anioFrom));
     }
     if (ranges.anioTo) {
-      query.where('anio').lte(new Date(ranges.anioTo).getTime());
+      query.where('anio').lte(Number(ranges.anioTo));
     }
 
     const skip = Math.max(0, (page - 1) * limit);
@@ -283,6 +337,241 @@ export class UsadosService {
       }
       throw new InternalServerErrorException(
         'Error al actualizar el vehículo usado',
+      );
+    }
+  }
+
+  async updateWithMedia(
+    id: string,
+    updateUsadoDto: UpdateUsadoDto,
+    files: {
+      imagenes?: Express.Multer.File[];
+      videos?: Express.Multer.File[];
+      fotoSinFondo1?: Express.Multer.File[];
+      fotoSinFondo2?: Express.Multer.File[];
+    },
+  ) {
+    const uploadedImages: MediaFile[] = [];
+    const uploadedVideos: MediaFile[] = [];
+    let uploadedFotoSinFondo1: MediaFile | undefined;
+    let uploadedFotoSinFondo2: MediaFile | undefined;
+
+    try {
+      // 1. Validar ID
+      if (!id.match(/^[0-9a-fA-F]{24}$/)) {
+        throw new BadRequestException('ID de vehículo usado inválido');
+      }
+
+      // 2. Obtener el vehículo actual
+      const usado = await this.usadoModel.findById(id).exec();
+      if (!usado) {
+        throw new NotFoundException(
+          `Vehículo usado con ID ${id} no encontrado`,
+        );
+      }
+
+      // 3. Eliminar imágenes marcadas para eliminar
+      if (
+        Array.isArray(updateUsadoDto.imagenesAEliminar) &&
+        updateUsadoDto.imagenesAEliminar.length > 0
+      ) {
+        for (const publicId of updateUsadoDto.imagenesAEliminar) {
+          try {
+            await this.cloudinaryService.deleteMedia(publicId);
+          } catch (error) {
+            console.error(`Error al eliminar imagen ${publicId}:`, error);
+          }
+        }
+        usado.imagenes = (usado.imagenes || []).filter(
+          (img) => !updateUsadoDto.imagenesAEliminar?.includes(img.public_id),
+        );
+      }
+
+      // 4. Eliminar videos marcados para eliminar
+      if (
+        Array.isArray(updateUsadoDto.videosAEliminar) &&
+        updateUsadoDto.videosAEliminar.length > 0
+      ) {
+        for (const publicId of updateUsadoDto.videosAEliminar) {
+          try {
+            await this.cloudinaryService.deleteMedia(publicId);
+          } catch (error) {
+            console.error(`Error al eliminar video ${publicId}:`, error);
+          }
+        }
+        usado.videos = (usado.videos || []).filter(
+          (vid) => !updateUsadoDto.videosAEliminar?.includes(vid.public_id),
+        );
+      }
+
+      // 5. Eliminar fotoSinFondo1 si se marcó
+      if (updateUsadoDto.eliminarFotoSinFondo1 && usado.fotoSinFondo1) {
+        try {
+          await this.cloudinaryService.deleteMedia(
+            usado.fotoSinFondo1.public_id,
+          );
+          usado.fotoSinFondo1 = undefined;
+        } catch (error) {
+          console.error('Error al eliminar fotoSinFondo1:', error);
+        }
+      }
+
+      // 6. Eliminar fotoSinFondo2 si se marcó
+      if (updateUsadoDto.eliminarFotoSinFondo2 && usado.fotoSinFondo2) {
+        try {
+          await this.cloudinaryService.deleteMedia(
+            usado.fotoSinFondo2.public_id,
+          );
+          usado.fotoSinFondo2 = undefined;
+        } catch (error) {
+          console.error('Error al eliminar fotoSinFondo2:', error);
+        }
+      }
+
+      // 7. Subir nuevas imágenes
+      if (files.imagenes && files.imagenes.length > 0) {
+        for (const imageFile of files.imagenes) {
+          try {
+            const uploadedImage = await this.cloudinaryService.uploadImage(
+              imageFile,
+              'usados/images',
+            );
+            uploadedImages.push(uploadedImage);
+          } catch (error) {
+            await this.cleanupUploadedFiles(uploadedImages, []);
+            throw new BadRequestException(
+              // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+              `Error al subir imagen: ${error.message || 'Error desconocido'}`,
+            );
+          }
+        }
+        usado.imagenes = [...(usado.imagenes || []), ...uploadedImages];
+      }
+
+      // 8. Subir nuevos videos
+      if (files.videos && files.videos.length > 0) {
+        for (const videoFile of files.videos) {
+          try {
+            const uploadedVideo = await this.cloudinaryService.uploadVideo(
+              videoFile,
+              'usados/videos',
+            );
+            uploadedVideos.push(uploadedVideo);
+          } catch (error) {
+            await this.cleanupUploadedFiles(uploadedImages, uploadedVideos);
+            throw new BadRequestException(
+              // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+              `Error al subir video: ${error.message || 'Error desconocido'}`,
+            );
+          }
+        }
+        usado.videos = [...(usado.videos || []), ...uploadedVideos];
+      }
+
+      // 9. Subir nueva fotoSinFondo1
+      if (files.fotoSinFondo1 && files.fotoSinFondo1.length > 0) {
+        try {
+          // Si ya existe una foto sin fondo 1, eliminarla primero
+          if (usado.fotoSinFondo1) {
+            await this.cloudinaryService.deleteMedia(
+              usado.fotoSinFondo1.public_id,
+            );
+          }
+          uploadedFotoSinFondo1 = await this.cloudinaryService.uploadImage(
+            files.fotoSinFondo1[0],
+            'usados/fotos-sin-fondo',
+          );
+          usado.fotoSinFondo1 = uploadedFotoSinFondo1;
+        } catch (error) {
+          await this.cleanupUploadedFiles(uploadedImages, uploadedVideos);
+          if (uploadedFotoSinFondo1) {
+            await this.cloudinaryService
+              .deleteMedia(uploadedFotoSinFondo1.public_id)
+              .catch(() => {});
+          }
+          throw new BadRequestException(
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+            `Error al subir fotoSinFondo1: ${error.message || 'Error desconocido'}`,
+          );
+        }
+      }
+
+      // 10. Subir nueva fotoSinFondo2
+      if (files.fotoSinFondo2 && files.fotoSinFondo2.length > 0) {
+        try {
+          // Si ya existe una foto sin fondo 2, eliminarla primero
+          if (usado.fotoSinFondo2) {
+            await this.cloudinaryService.deleteMedia(
+              usado.fotoSinFondo2.public_id,
+            );
+          }
+          uploadedFotoSinFondo2 = await this.cloudinaryService.uploadImage(
+            files.fotoSinFondo2[0],
+            'usados/fotos-sin-fondo',
+          );
+          usado.fotoSinFondo2 = uploadedFotoSinFondo2;
+        } catch (error) {
+          await this.cleanupUploadedFiles(uploadedImages, uploadedVideos);
+          if (uploadedFotoSinFondo1) {
+            await this.cloudinaryService
+              .deleteMedia(uploadedFotoSinFondo1.public_id)
+              .catch(() => {});
+          }
+          if (uploadedFotoSinFondo2) {
+            await this.cloudinaryService
+              .deleteMedia(uploadedFotoSinFondo2.public_id)
+              .catch(() => {});
+          }
+          throw new BadRequestException(
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+            `Error al subir fotoSinFondo2: ${error.message || 'Error desconocido'}`,
+          );
+        }
+      }
+
+      // 11. Actualizar otros campos del DTO (excepto los de eliminación)
+      const {
+        imagenesAEliminar,
+        videosAEliminar,
+        eliminarFotoSinFondo1,
+        eliminarFotoSinFondo2,
+        ...otherFields
+      } = updateUsadoDto;
+      // Silenciar warnings de variables no usadas (se desestructuran para excluirlas)
+      void imagenesAEliminar;
+      void videosAEliminar;
+      void eliminarFotoSinFondo1;
+      void eliminarFotoSinFondo2;
+      Object.assign(usado, otherFields);
+
+      // 12. Guardar cambios
+      const updatedUsado = await usado.save();
+      this.clearOptionsCache();
+
+      return updatedUsado;
+    } catch (error) {
+      // Limpiar archivos subidos en caso de error
+      await this.cleanupUploadedFiles(uploadedImages, uploadedVideos);
+      if (uploadedFotoSinFondo1) {
+        await this.cloudinaryService
+          .deleteMedia(uploadedFotoSinFondo1.public_id)
+          .catch(() => {});
+      }
+      if (uploadedFotoSinFondo2) {
+        await this.cloudinaryService
+          .deleteMedia(uploadedFotoSinFondo2.public_id)
+          .catch(() => {});
+      }
+
+      if (
+        error instanceof BadRequestException ||
+        error instanceof NotFoundException
+      ) {
+        throw error;
+      }
+      throw new InternalServerErrorException(
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        `Error al actualizar vehículo usado: ${error.message || 'Error desconocido'}`,
       );
     }
   }
@@ -509,10 +798,10 @@ export class UsadosService {
       query = query.where('kilometraje').lte(ranges.kilometrajeMax);
     }
     if (ranges.anioFrom) {
-      query = query.where('anio').gte(new Date(ranges.anioFrom).getTime());
+      query = query.where('anio').gte(Number(ranges.anioFrom));
     }
     if (ranges.anioTo) {
-      query = query.where('anio').lte(new Date(ranges.anioTo).getTime());
+      query = query.where('anio').lte(Number(ranges.anioTo));
     }
 
     const skip = Math.max(0, (page - 1) * limit);
