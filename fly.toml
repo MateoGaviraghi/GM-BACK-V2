@@ -1,7 +1,7 @@
 # Fly.io configuration — Guzman Motors Backend
 # Docs: https://fly.io/docs/reference/configuration/
 
-app = "guzman-motors-back"
+app = "gm-back-v2"
 primary_region = "gru"  # São Paulo — más cercano a Argentina
 
 [build]
