@@ -40,11 +40,20 @@ async function bootstrap() {
 
   // CORS configurado de forma segura
   const frontendUrl =
-    config.get<string>('FRONTEND_URL') || 'http://localhost:3000';
+    config.get<string>('FRONTEND_URL') || 'http://localhost:3001';
+  const corsOrigins = config.get<string>('CORS_ORIGINS');
   const nodeEnv = config.get<string>('NODE_ENV') || 'development';
 
+  // Construir lista de orígenes permitidos
+  const allowedOrigins: string[] = [frontendUrl];
+  if (corsOrigins) {
+    allowedOrigins.push(
+      ...corsOrigins.split(',').map((origin) => origin.trim()),
+    );
+  }
+
   app.enableCors({
-    origin: nodeEnv === 'production' ? frontendUrl : true,
+    origin: nodeEnv === 'production' ? allowedOrigins : true,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
@@ -61,7 +70,7 @@ async function bootstrap() {
   console.log(`🚀 Servidor corriendo en http://localhost:${port}/api`);
   console.log(`🔒 Modo: ${nodeEnv}`);
   console.log(
-    `🌍 CORS habilitado para: ${nodeEnv === 'production' ? frontendUrl : 'Todos los orígenes (dev)'}`,
+    `🌍 CORS habilitado para: ${nodeEnv === 'production' ? allowedOrigins.join(', ') : 'Todos los orígenes (dev)'}`,
   );
 }
 void bootstrap();

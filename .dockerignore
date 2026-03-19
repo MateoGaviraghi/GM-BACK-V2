@@ -1,26 +1,38 @@
-# Node
-node_modules/
+# Dependencies
+node_modules
 
 # Build output
-dist/
+dist
 
-# Env files
+# Git
+.git
+.gitignore
+
+# Environment files
 .env
 .env.*
+!.env.example
 
 # Logs
 npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
+*.log
 
-# OS/Editor
+# Test files
+test
+coverage
+.nyc_output
+**/*.spec.ts
+**/*.e2e-spec.ts
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS
 .DS_Store
 Thumbs.db
-.vscode/
-
-# Coverage
-coverage/
 
 # Misc
-*.tsbuildinfo# Node\nnode_modules/\n\n# Build output\ndist/\n\n# Env\n.env\n
+README.md
