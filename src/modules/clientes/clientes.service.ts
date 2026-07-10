@@ -29,8 +29,28 @@ export class ClientesService {
     return this.clienteModel.find().exec();
   }
 
-  findOne(id: string) {
-    return this.clienteModel.findById(id).exec();
+  async findOne(id: string): Promise<ClienteDocument> {
+    try {
+      // Validar que el ID sea un ObjectId válido
+      if (!id.match(/^[0-9a-fA-F]{24}$/)) {
+        throw new BadRequestException('ID de cliente inválido');
+      }
+
+      const cliente = await this.clienteModel.findById(id).exec();
+      if (!cliente) {
+        throw new NotFoundException(`Cliente con ID ${id} no encontrado`);
+      }
+
+      return cliente;
+    } catch (error) {
+      if (
+        error instanceof BadRequestException ||
+        error instanceof NotFoundException
+      ) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Error al buscar el cliente');
+    }
   }
 
   async update(

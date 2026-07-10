@@ -21,7 +21,10 @@ import { Roles } from '../../auth/decorators/roles.decorator';
 export class UsuariosController {
   constructor(private readonly usuariosService: UsuariosService) {}
 
-  // Registro (público) - Rate limit estricto
+  // Creación de usuarios: SOLO admins autenticados (el registro público
+  // permitía crear usuarios con role admin — cerrado antes de producción)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
   @Throttle({ short: { limit: 3, ttl: 60000 } }) // 3 intentos por minuto
   @Post()
   create(@Body() createUsuarioDto: CreateUsuarioDto) {

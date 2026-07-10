@@ -139,11 +139,60 @@ export class RemolquesPublicController {
     doc.pipe(res);
 
     const colors = {
-      cyan: '#0891b2',
-      darkSlate: '#0f172a',
-      lightSlate: '#f8fafc',
-      white: '#ffffff',
-      green: '#10b981',
+      bg: '#14171C',
+      panel: '#1B2027',
+      text: '#ECEEF1',
+      secondary: '#AEB6C2',
+      muted: '#7E8794',
+      petrol: '#6FC0D4',
+      hairline: '#2C323B',
+    };
+
+    const drawFooter = () => {
+      doc
+        .moveTo(50, 760)
+        .lineTo(545, 760)
+        .strokeColor(colors.hairline)
+        .lineWidth(0.75)
+        .stroke();
+
+      if (fs.existsSync(logoPath)) {
+        doc.image(logoPath, 50, 765, { width: 35 });
+      }
+
+      doc
+        .fontSize(7)
+        .font('Helvetica-Bold')
+        .fillColor(colors.muted)
+        .text('TELÉFONO', 100, 770, { characterSpacing: 1.8 });
+      doc
+        .fontSize(7)
+        .font('Helvetica')
+        .fillColor(colors.secondary)
+        .text('+54 9 342 421 6850', 100, 781);
+
+      doc
+        .fontSize(7)
+        .font('Helvetica-Bold')
+        .fillColor(colors.muted)
+        .text('VISITANOS', 250, 770, { characterSpacing: 1.8 });
+      doc
+        .fontSize(7)
+        .font('Helvetica')
+        .fillColor(colors.secondary)
+        .text('Av. Blas Parera 6422', 250, 781);
+      doc.text('Santa Fe, Argentina', 250, 792);
+
+      doc
+        .fontSize(7)
+        .font('Helvetica-Bold')
+        .fillColor(colors.muted)
+        .text('HORARIOS', 450, 770, { characterSpacing: 1.8 });
+      doc
+        .fontSize(7)
+        .font('Helvetica')
+        .fillColor(colors.secondary)
+        .text('Lun - Vie: 09:30 - 18:30', 450, 781);
     };
 
     const logoPath = path.join(
@@ -162,24 +211,33 @@ export class RemolquesPublicController {
     );
 
     // ==================== PÁGINA 1: PORTADA ====================
-    // Fondo azul oscuro completo
-    doc.rect(0, 0, 595, 842).fill(colors.darkSlate);
+    // Fondo GM completo
+    doc.rect(0, 0, 595, 842).fill(colors.bg);
 
     // Header con logo de letras grande centrado
     if (fs.existsSync(letrasPath)) {
       doc.image(letrasPath, 190, 35, { width: 215 });
     }
 
-    // Título del remolque - estilo moderno y elegante
+    // Título del remolque
     doc
-      .fontSize(28)
-      .font('Helvetica')
-      .fillColor(colors.white)
+      .fontSize(26)
+      .font('Helvetica-Bold')
+      .fillColor(colors.text)
       .text(remolque.titulo?.toUpperCase() || 'REMOLQUE', 50, 180, {
         width: 495,
-        characterSpacing: 4,
+        characterSpacing: 2.5,
         lineGap: 8,
       });
+
+    // Regla petrol
+    const reglaY = doc.y + 14;
+    doc
+      .moveTo(50, reglaY)
+      .lineTo(50 + 48, reglaY)
+      .strokeColor(colors.petrol)
+      .lineWidth(1.2)
+      .stroke();
 
     // Subtítulo con información
     const subtitulo = [
@@ -192,10 +250,10 @@ export class RemolquesPublicController {
       .join(' | ');
 
     doc
-      .fontSize(14)
+      .fontSize(9)
       .font('Helvetica')
-      .fillColor(colors.cyan)
-      .text(subtitulo, 50, doc.y + 15);
+      .fillColor(colors.petrol)
+      .text(subtitulo, 50, reglaY + 14, { characterSpacing: 1.5 });
 
     // Imagen principal grande y centrada - Usar foto sin fondo si existe
     const mainImageUrl =
@@ -215,57 +273,13 @@ export class RemolquesPublicController {
     }
 
     // Footer de página 1
-    doc
-      .moveTo(50, 760)
-      .lineTo(545, 760)
-      .strokeColor(colors.cyan)
-      .lineWidth(2)
-      .stroke();
-
-    // Logo G pequeño en footer
-    if (fs.existsSync(logoPath)) {
-      doc.image(logoPath, 50, 765, { width: 35 });
-    }
-
-    doc
-      .fontSize(9)
-      .font('Helvetica-Bold')
-      .fillColor(colors.white)
-      .text('Teléfono', 100, 770);
-    doc
-      .fontSize(8)
-      .font('Helvetica')
-      .fillColor(colors.lightSlate)
-      .text('+54 9 342 421 6850', 100, 783);
-
-    doc
-      .fontSize(9)
-      .font('Helvetica-Bold')
-      .fillColor(colors.white)
-      .text('Visitanos', 250, 770);
-    doc
-      .fontSize(8)
-      .font('Helvetica')
-      .fillColor(colors.lightSlate)
-      .text('Av. Blas Parera 6422', 250, 783);
-    doc.text('Santa Fe, Argentina', 250, 795);
-
-    doc
-      .fontSize(9)
-      .font('Helvetica-Bold')
-      .fillColor(colors.white)
-      .text('Horarios', 450, 770);
-    doc
-      .fontSize(8)
-      .font('Helvetica')
-      .fillColor(colors.lightSlate)
-      .text('Lun - Vie: 09:30 - 18:30', 450, 783);
+    drawFooter();
 
     // ==================== PÁGINA 2: CARACTERÍSTICAS TÉCNICAS ====================
     doc.addPage();
 
-    // Fondo azul oscuro
-    doc.rect(0, 0, 595, 842).fill(colors.darkSlate);
+    // Fondo GM
+    doc.rect(0, 0, 595, 842).fill(colors.bg);
 
     // Header - Solo logo de letras grande y título de sección
     if (fs.existsSync(letrasPath)) {
@@ -274,45 +288,64 @@ export class RemolquesPublicController {
 
     let y = 135;
 
-    // Título de sección
+    // Encabezado de sección: label acento tracked + hairline full-width
     doc
-      .fontSize(16)
+      .fontSize(8)
       .font('Helvetica-Bold')
-      .fillColor(colors.cyan)
-      .text('CARACTERÍSTICAS TÉCNICAS', 50, y);
+      .fillColor(colors.petrol)
+      .text('CARACTERÍSTICAS TÉCNICAS', 50, y, { characterSpacing: 1.8 });
 
-    y += 35;
+    y += 14;
+    doc
+      .moveTo(50, y)
+      .lineTo(545, y)
+      .strokeColor(colors.hairline)
+      .lineWidth(0.75)
+      .stroke();
 
-    // Crear tabla con fondo gris claro
+    y += 21;
+
     const tableStartY = y;
     const cellHeight = 22;
     const col1Width = 220;
     const col2Width = 275;
 
-    // Función helper para añadir fila a la tabla
+    // Función helper para añadir fila a la tabla (o mini-header de subsección)
     const addTableRow = (label: string, value: string, isHeader = false) => {
-      // Alternar colores de fila
-      const rowColor = isHeader
-        ? '#1e293b'
-        : y % 2 === 0
-          ? '#334155'
-          : '#1e293b';
-      doc.rect(50, y, col1Width + col2Width, cellHeight).fill(rowColor);
-
-      const textColor = isHeader ? colors.cyan : colors.white;
-      const labelColor = isHeader ? colors.cyan : colors.lightSlate;
-
-      doc
-        .fontSize(isHeader ? 12 : 10)
-        .font(isHeader ? 'Helvetica-Bold' : 'Helvetica-Bold')
-        .fillColor(labelColor)
-        .text(label, 60, y + 6, { width: col1Width - 20 });
+      if (isHeader) {
+        doc
+          .fontSize(8)
+          .font('Helvetica-Bold')
+          .fillColor(colors.petrol)
+          .text(label.toUpperCase(), 50, y + 4, { characterSpacing: 1.8 });
+        y += cellHeight;
+        return;
+      }
 
       doc
-        .fontSize(isHeader ? 12 : 10)
-        .font(isHeader ? 'Helvetica-Bold' : 'Helvetica')
-        .fillColor(textColor)
-        .text(value, 50 + col1Width + 10, y + 6, { width: col2Width - 20 });
+        .fontSize(7)
+        .font('Helvetica')
+        .fillColor(colors.muted)
+        .text(label.toUpperCase(), 50, y + 7, {
+          width: col1Width - 10,
+          characterSpacing: 1.8,
+        });
+
+      doc
+        .fontSize(10)
+        .font('Helvetica')
+        .fillColor(colors.text)
+        .text(value, 50 + col1Width, y + 5, {
+          width: col2Width - 10,
+          align: 'right',
+        });
+
+      doc
+        .moveTo(50, y + cellHeight)
+        .lineTo(50 + col1Width + col2Width, y + cellHeight)
+        .strokeColor(colors.hairline)
+        .lineWidth(0.75)
+        .stroke();
 
       y += cellHeight;
     };
@@ -408,51 +441,7 @@ export class RemolquesPublicController {
     }
 
     // Footer página 2
-    doc
-      .moveTo(50, 760)
-      .lineTo(545, 760)
-      .strokeColor(colors.cyan)
-      .lineWidth(2)
-      .stroke();
-
-    // Logo G pequeño en footer
-    if (fs.existsSync(logoPath)) {
-      doc.image(logoPath, 50, 765, { width: 35 });
-    }
-
-    doc
-      .fontSize(9)
-      .font('Helvetica-Bold')
-      .fillColor(colors.white)
-      .text('Teléfono', 100, 770);
-    doc
-      .fontSize(8)
-      .font('Helvetica')
-      .fillColor(colors.lightSlate)
-      .text('+54 9 342 421 6850', 100, 783);
-
-    doc
-      .fontSize(9)
-      .font('Helvetica-Bold')
-      .fillColor(colors.white)
-      .text('Visitanos', 250, 770);
-    doc
-      .fontSize(8)
-      .font('Helvetica')
-      .fillColor(colors.lightSlate)
-      .text('Av. Blas Parera 6422', 250, 783);
-    doc.text('Santa Fe, Argentina', 250, 795);
-
-    doc
-      .fontSize(9)
-      .font('Helvetica-Bold')
-      .fillColor(colors.white)
-      .text('Horarios', 450, 770);
-    doc
-      .fontSize(8)
-      .font('Helvetica')
-      .fillColor(colors.lightSlate)
-      .text('Lun - Vie: 09:30 - 18:30', 450, 783);
+    drawFooter();
 
     // ==================== PÁGINA 3: EQUIPAMIENTO (si hay) ====================
     if (
@@ -461,8 +450,8 @@ export class RemolquesPublicController {
     ) {
       doc.addPage();
 
-      // Fondo azul oscuro
-      doc.rect(0, 0, 595, 842).fill(colors.darkSlate);
+      // Fondo GM
+      doc.rect(0, 0, 595, 842).fill(colors.bg);
 
       // Header - Solo logo de letras grande
       if (fs.existsSync(letrasPath)) {
@@ -479,22 +468,22 @@ export class RemolquesPublicController {
       // EQUIPAMIENTO DE SERIE
       if (remolque.equipamientoSerie?.length) {
         doc
-          .fontSize(14)
+          .fontSize(13)
           .font('Helvetica-Bold')
-          .fillColor(colors.cyan)
-          .text('EQUIPAMIENTO DE SERIE', col1X, y);
+          .fillColor(colors.petrol)
+          .text('EQUIPAMIENTO DE SERIE', col1X, y, { characterSpacing: 2.5 });
 
         let y1 = y + 30;
 
         remolque.equipamientoSerie.forEach((item) => {
           if (y1 > 380) return; // Dejar más espacio para imagen
 
+          doc.rect(col1X, y1 + 3, 3, 3).fill(colors.petrol);
           doc
             .fontSize(9)
             .font('Helvetica')
-            .fillColor(colors.lightSlate)
-            .text('•', col1X, y1)
-            .text(item, col1X + 15, y1, { width: colWidth - 15 });
+            .fillColor(colors.text)
+            .text(item, col1X + 12, y1, { width: colWidth - 12 });
 
           y1 += 16;
         });
@@ -503,22 +492,22 @@ export class RemolquesPublicController {
       // EQUIPAMIENTO OPCIONAL
       if (remolque.equipamientoOpcional?.length) {
         doc
-          .fontSize(14)
+          .fontSize(13)
           .font('Helvetica-Bold')
-          .fillColor(colors.cyan)
-          .text('EQUIPAMIENTO OPCIONAL', col2X, y);
+          .fillColor(colors.petrol)
+          .text('EQUIPAMIENTO OPCIONAL', col2X, y, { characterSpacing: 2.5 });
 
         let y2 = y + 30;
 
         remolque.equipamientoOpcional.forEach((item) => {
           if (y2 > 380) return; // Dejar más espacio para imagen
 
+          doc.rect(col2X, y2 + 3, 3, 3).fill(colors.petrol);
           doc
             .fontSize(9)
             .font('Helvetica')
-            .fillColor(colors.lightSlate)
-            .text('•', col2X, y2)
-            .text(item, col2X + 15, y2, { width: colWidth - 15 });
+            .fillColor(colors.text)
+            .text(item, col2X + 12, y2, { width: colWidth - 12 });
 
           y2 += 16;
         });
@@ -544,51 +533,7 @@ export class RemolquesPublicController {
       }
 
       // Footer página 3
-      doc
-        .moveTo(50, 760)
-        .lineTo(545, 760)
-        .strokeColor(colors.cyan)
-        .lineWidth(2)
-        .stroke();
-
-      // Logo G pequeño en footer
-      if (fs.existsSync(logoPath)) {
-        doc.image(logoPath, 50, 765, { width: 35 });
-      }
-
-      doc
-        .fontSize(9)
-        .font('Helvetica-Bold')
-        .fillColor(colors.white)
-        .text('Teléfono', 100, 770);
-      doc
-        .fontSize(8)
-        .font('Helvetica')
-        .fillColor(colors.lightSlate)
-        .text('+54 9 342 421 6850', 100, 783);
-
-      doc
-        .fontSize(9)
-        .font('Helvetica-Bold')
-        .fillColor(colors.white)
-        .text('Visitanos', 250, 770);
-      doc
-        .fontSize(8)
-        .font('Helvetica')
-        .fillColor(colors.lightSlate)
-        .text('Av. Blas Parera 6422', 250, 783);
-      doc.text('Santa Fe, Argentina', 250, 795);
-
-      doc
-        .fontSize(9)
-        .font('Helvetica-Bold')
-        .fillColor(colors.white)
-        .text('Horarios', 450, 770);
-      doc
-        .fontSize(8)
-        .font('Helvetica')
-        .fillColor(colors.lightSlate)
-        .text('Lun - Vie: 09:30 - 18:30', 450, 783);
+      drawFooter();
     }
 
     doc.end();

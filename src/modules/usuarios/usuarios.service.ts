@@ -1,5 +1,6 @@
 import {
   Injectable,
+  BadRequestException,
   ConflictException,
   NotFoundException,
   UnauthorizedException,
@@ -48,6 +49,9 @@ export class UsuariosService {
   }
 
   async findOne(id: string) {
+    if (!id.match(/^[0-9a-fA-F]{24}$/)) {
+      throw new BadRequestException('ID de usuario inválido');
+    }
     const doc = await this.userModel
       .findById(id)
       .select('-passwordHash')
@@ -58,6 +62,9 @@ export class UsuariosService {
   }
 
   async update(id: string, updateUsuarioDto: UpdateUsuarioDto) {
+    if (!id.match(/^[0-9a-fA-F]{24}$/)) {
+      throw new BadRequestException('ID de usuario inválido');
+    }
     const update: Partial<Usuario> = {};
     if (updateUsuarioDto.email)
       update.email = updateUsuarioDto.email.trim().toLowerCase();
@@ -73,6 +80,9 @@ export class UsuariosService {
   }
 
   async remove(id: string) {
+    if (!id.match(/^[0-9a-fA-F]{24}$/)) {
+      throw new BadRequestException('ID de usuario inválido');
+    }
     const res = await this.userModel.findByIdAndDelete(id).exec();
     if (!res) throw new NotFoundException('Usuario no encontrado');
     return { ok: true };
