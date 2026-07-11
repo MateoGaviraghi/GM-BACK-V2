@@ -130,7 +130,8 @@ export class RemolquesPublicController {
     const PDFDocument = (await import('pdfkit')).default;
     const doc = new PDFDocument({
       size: 'A4',
-      margins: { top: 0, bottom: 0, left: 0, right: 0 },
+      layout: 'landscape',
+      margin: 0,
     });
 
     res.setHeader('Content-Type', 'application/pdf');
@@ -138,61 +139,16 @@ export class RemolquesPublicController {
     res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
     doc.pipe(res);
 
-    const colors = {
-      bg: '#14171C',
-      panel: '#1B2027',
-      text: '#ECEEF1',
-      secondary: '#AEB6C2',
-      muted: '#7E8794',
-      petrol: '#6FC0D4',
-      hairline: '#2C323B',
-    };
-
-    const drawFooter = () => {
-      doc
-        .moveTo(50, 760)
-        .lineTo(545, 760)
-        .strokeColor(colors.hairline)
-        .lineWidth(0.75)
-        .stroke();
-
-      if (fs.existsSync(logoPath)) {
-        doc.image(logoPath, 50, 765, { width: 35 });
-      }
-
-      doc
-        .fontSize(7)
-        .font('Helvetica-Bold')
-        .fillColor(colors.muted)
-        .text('TELÉFONO', 100, 770, { characterSpacing: 1.8 });
-      doc
-        .fontSize(7)
-        .font('Helvetica')
-        .fillColor(colors.secondary)
-        .text('+54 9 342 421 6850', 100, 781);
-
-      doc
-        .fontSize(7)
-        .font('Helvetica-Bold')
-        .fillColor(colors.muted)
-        .text('VISITANOS', 250, 770, { characterSpacing: 1.8 });
-      doc
-        .fontSize(7)
-        .font('Helvetica')
-        .fillColor(colors.secondary)
-        .text('Av. Blas Parera 6422', 250, 781);
-      doc.text('Santa Fe, Argentina', 250, 792);
-
-      doc
-        .fontSize(7)
-        .font('Helvetica-Bold')
-        .fillColor(colors.muted)
-        .text('HORARIOS', 450, 770, { characterSpacing: 1.8 });
-      doc
-        .fontSize(7)
-        .font('Helvetica')
-        .fillColor(colors.secondary)
-        .text('Lun - Vie: 09:30 - 18:30', 450, 781);
+    // ==================== DISEÑO "FICHA GM" (A4 APAISADO) ====================
+    const C = {
+      carbon: '#14171C',
+      panel: '#F4F5F7',
+      hair: '#E3E5E8',
+      ink: '#16181D',
+      mut: '#6E7681',
+      petrol: '#127C8C',
+      petrolBright: '#6FC0D4',
+      white: '#FFFFFF',
     };
 
     const logoPath = path.join(
@@ -210,330 +166,566 @@ export class RemolquesPublicController {
       'letrasGuzmanMotors-Photoroom.png',
     );
 
-    // ==================== PÁGINA 1: PORTADA ====================
-    // Fondo GM completo
-    doc.rect(0, 0, 595, 842).fill(colors.bg);
-
-    // Header con logo de letras grande centrado
-    if (fs.existsSync(letrasPath)) {
-      doc.image(letrasPath, 190, 35, { width: 215 });
-    }
-
-    // Título del remolque
-    doc
-      .fontSize(26)
-      .font('Helvetica-Bold')
-      .fillColor(colors.text)
-      .text(remolque.titulo?.toUpperCase() || 'REMOLQUE', 50, 180, {
-        width: 495,
-        characterSpacing: 2.5,
-        lineGap: 8,
-      });
-
-    // Regla petrol
-    const reglaY = doc.y + 14;
-    doc
-      .moveTo(50, reglaY)
-      .lineTo(50 + 48, reglaY)
-      .strokeColor(colors.petrol)
-      .lineWidth(1.2)
-      .stroke();
-
-    // Subtítulo con información
-    const subtitulo = [
-      remolque.marca,
-      remolque.modelo,
-      remolque.condicion,
-      remolque.categoria,
-    ]
-      .filter((x) => x)
-      .join(' | ');
-
-    doc
-      .fontSize(9)
-      .font('Helvetica')
-      .fillColor(colors.petrol)
-      .text(subtitulo, 50, reglaY + 14, { characterSpacing: 1.5 });
-
-    // Imagen principal grande y centrada - Usar foto sin fondo si existe
-    const mainImageUrl =
-      remolque.fotoSinFondo1?.secure_url || remolque.imagenes?.[0]?.secure_url;
-
-    if (mainImageUrl) {
+    // ===== Fetch de imágenes Cloudinary (axios) =====
+    const fetchImage = async (url?: string): Promise<Buffer | null> => {
+      if (!url) return null;
       try {
         const axios = (await import('axios')).default;
-        const response = await axios.get(mainImageUrl, {
+        const response = await axios.get(url, {
           responseType: 'arraybuffer',
         });
-        const imageBuffer = Buffer.from(response.data);
-        doc.image(imageBuffer, 50, 310, { width: 495, height: 350 });
+        return Buffer.from(response.data);
       } catch (error) {
-        console.error('Error loading main image:', error);
+        console.error('Error loading image:', error);
+        return null;
       }
-    }
-
-    // Footer de página 1
-    drawFooter();
-
-    // ==================== PÁGINA 2: CARACTERÍSTICAS TÉCNICAS ====================
-    doc.addPage();
-
-    // Fondo GM
-    doc.rect(0, 0, 595, 842).fill(colors.bg);
-
-    // Header - Solo logo de letras grande y título de sección
-    if (fs.existsSync(letrasPath)) {
-      doc.image(letrasPath, 190, 35, { width: 215 });
-    }
-
-    let y = 135;
-
-    // Encabezado de sección: label acento tracked + hairline full-width
-    doc
-      .fontSize(8)
-      .font('Helvetica-Bold')
-      .fillColor(colors.petrol)
-      .text('CARACTERÍSTICAS TÉCNICAS', 50, y, { characterSpacing: 1.8 });
-
-    y += 14;
-    doc
-      .moveTo(50, y)
-      .lineTo(545, y)
-      .strokeColor(colors.hairline)
-      .lineWidth(0.75)
-      .stroke();
-
-    y += 21;
-
-    const tableStartY = y;
-    const cellHeight = 22;
-    const col1Width = 220;
-    const col2Width = 275;
-
-    // Función helper para añadir fila a la tabla (o mini-header de subsección)
-    const addTableRow = (label: string, value: string, isHeader = false) => {
-      if (isHeader) {
-        doc
-          .fontSize(8)
-          .font('Helvetica-Bold')
-          .fillColor(colors.petrol)
-          .text(label.toUpperCase(), 50, y + 4, { characterSpacing: 1.8 });
-        y += cellHeight;
-        return;
-      }
-
-      doc
-        .fontSize(7)
-        .font('Helvetica')
-        .fillColor(colors.muted)
-        .text(label.toUpperCase(), 50, y + 7, {
-          width: col1Width - 10,
-          characterSpacing: 1.8,
-        });
-
-      doc
-        .fontSize(10)
-        .font('Helvetica')
-        .fillColor(colors.text)
-        .text(value, 50 + col1Width, y + 5, {
-          width: col2Width - 10,
-          align: 'right',
-        });
-
-      doc
-        .moveTo(50, y + cellHeight)
-        .lineTo(50 + col1Width + col2Width, y + cellHeight)
-        .strokeColor(colors.hairline)
-        .lineWidth(0.75)
-        .stroke();
-
-      y += cellHeight;
     };
 
-    // Datos generales
-    if (remolque.tipoCarroceria)
-      addTableRow('Tipo de Carrocería', remolque.tipoCarroceria);
-    if (remolque.cantidadEjes)
-      addTableRow('Cantidad de Ejes', String(remolque.cantidadEjes));
-    if (remolque.capacidadCarga)
-      addTableRow('Capacidad de Carga', remolque.capacidadCarga);
-    if (remolque.tara) addTableRow('Tara', `${remolque.tara} kg`);
-    if (remolque.pbtc) addTableRow('PBTC', remolque.pbtc);
+    const img1 = await fetchImage(
+      remolque.fotoSinFondo1?.secure_url || remolque.imagenes?.[0]?.secure_url,
+    );
+    const img2 = await fetchImage(
+      remolque.fotoSinFondo2?.secure_url || remolque.imagenes?.[1]?.secure_url,
+    );
+    const img3 = await fetchImage(remolque.imagenes?.[2]?.secure_url);
 
-    // CHASIS
-    if (remolque.chasis) {
-      y += 10;
-      addTableRow('CHASIS', '', true);
+    // ===== Helpers de dibujo =====
+    const drawCover = (
+      buf: Buffer,
+      x: number,
+      y: number,
+      w: number,
+      h: number,
+    ) => {
+      doc.save();
+      doc.rect(x, y, w, h).clip();
+      doc.image(buf, x, y, {
+        cover: [w, h],
+        align: 'center',
+        valign: 'center',
+      });
+      doc.restore();
+    };
 
-      if (remolque.chasis.tipo) addTableRow('Tipo', remolque.chasis.tipo);
-      if (remolque.chasis.material)
-        addTableRow('Material', remolque.chasis.material);
-      if (remolque.chasis.pisoChapaEspesor)
-        addTableRow('Piso Chapa Espesor', remolque.chasis.pisoChapaEspesor);
-    }
-
-    // DIMENSIONES
-    if (remolque.dimensiones) {
-      y += 10;
-      addTableRow('DIMENSIONES', '', true);
-
-      if (remolque.dimensiones.largoInterior)
-        addTableRow(
-          'Largo Interior',
-          `${remolque.dimensiones.largoInterior} mm`,
-        );
-      if (remolque.dimensiones.anchoExterior)
-        addTableRow(
-          'Ancho Exterior',
-          `${remolque.dimensiones.anchoExterior} mm`,
-        );
-      if (remolque.dimensiones.alturaBaranda)
-        addTableRow(
-          'Altura Baranda',
-          `${remolque.dimensiones.alturaBaranda} mm`,
-        );
-    }
-
-    // EJES Y SUSPENSIÓN
-    if (remolque.ejesSuspension) {
-      y += 10;
-      addTableRow('EJES Y SUSPENSIÓN', '', true);
-
-      if (remolque.ejesSuspension.tipoEjes)
-        addTableRow('Ejes', remolque.ejesSuspension.tipoEjes);
-      if (remolque.ejesSuspension.llantas)
-        addTableRow('Llantas', remolque.ejesSuspension.llantas);
-      if (remolque.ejesSuspension.suspension)
-        addTableRow('Suspensión', remolque.ejesSuspension.suspension);
-      if (remolque.ejesSuspension.frenos)
-        addTableRow('Frenos', remolque.ejesSuspension.frenos);
-    }
-
-    // CARROCERÍA
-    if (remolque.carroceria) {
-      y += 10;
-      addTableRow('CARROCERÍA', '', true);
-
-      if (remolque.carroceria.tipo)
-        addTableRow('Tipo', remolque.carroceria.tipo);
-      if (remolque.carroceria.material)
-        addTableRow('Material', remolque.carroceria.material);
-      if (remolque.carroceria.pintura)
-        addTableRow('Pintura', remolque.carroceria.pintura);
-    }
-
-    // Segunda imagen en la página 2 (si hay espacio) - Usar foto sin fondo si existe
-    const secondImageUrl =
-      remolque.fotoSinFondo2?.secure_url || remolque.imagenes?.[1]?.secure_url;
-
-    if (secondImageUrl && y < 520) {
-      y += 20;
-      try {
-        const axios = (await import('axios')).default;
-        const response = await axios.get(secondImageUrl, {
-          responseType: 'arraybuffer',
+    const drawBrandBand = () => {
+      doc.rect(0, 0, 842, 72).fill(C.carbon);
+      if (fs.existsSync(logoPath)) {
+        doc.image(logoPath, 40, 20, { width: 30 });
+      }
+      if (fs.existsSync(letrasPath)) {
+        doc.image(letrasPath, 80, 27, { width: 104 });
+      }
+      let bandTitle = remolque.titulo || 'Remolque';
+      if (bandTitle.length > 52) bandTitle = bandTitle.slice(0, 51) + '…';
+      doc
+        .font('Helvetica-BoldOblique')
+        .fontSize(17)
+        .fillColor(C.white)
+        .text(bandTitle, 302, 22, {
+          width: 500,
+          align: 'right',
+          lineBreak: false,
         });
-        const imageBuffer = Buffer.from(response.data);
-        doc.image(imageBuffer, 50, y, { fit: [495, 180], align: 'center' });
-      } catch (error) {
-        console.error('Error loading second image:', error);
+      doc
+        .font('Helvetica-Bold')
+        .fontSize(7)
+        .fillColor(C.petrolBright)
+        .text('FICHA TÉCNICA · GUZMÁN MOTORS', 302, 44, {
+          width: 500,
+          align: 'right',
+          characterSpacing: 2.5,
+        });
+    };
+
+    const drawSectionBand = (x: number, w: number, label: string) => {
+      doc.rect(x, 96, w, 22).fill(C.carbon);
+      doc
+        .font('Helvetica-Bold')
+        .fontSize(9)
+        .fillColor(C.white)
+        .text(label, x, 102, {
+          width: w,
+          align: 'center',
+          characterSpacing: 2,
+        });
+    };
+
+    const drawContactBand = () => {
+      doc.rect(0, 535, 842, 60).fill(C.carbon);
+      if (fs.existsSync(logoPath)) {
+        doc.image(logoPath, 40, 549, { width: 26 });
+      }
+      const block = (x: number, label: string, value: string) => {
+        doc
+          .font('Helvetica-Bold')
+          .fontSize(6.5)
+          .fillColor(C.petrolBright)
+          .text(label, x, 551, { characterSpacing: 2 });
+        doc.font('Helvetica').fontSize(8).fillColor(C.white).text(value, x, 562);
+      };
+      block(92, 'VISITANOS', 'Av. Blas Parera 6422 — Santa Fe');
+      block(300, 'TELÉFONO', '+54 9 342 421 6850');
+      block(470, 'EMAIL', 'hguzmanmotors@gmail.com');
+      block(650, 'HORARIOS', 'Lun–Vie 8:30–12:30 · 15:30–18:30');
+    };
+
+    const drawPhotoPlate = (buf: Buffer, px: number, py: number) => {
+      drawCover(buf, px, py, 258, 150);
+      doc.rect(px, py, 258, 150).strokeColor(C.hair).lineWidth(1).stroke();
+    };
+
+    const drawCarbonPlate = (px: number, py: number) => {
+      doc.rect(px, py, 258, 150).fill(C.carbon);
+      if (fs.existsSync(logoPath)) {
+        doc.image(logoPath, px + 108, py + 42, { width: 42 });
+      }
+      doc
+        .font('Helvetica-Bold')
+        .fontSize(8)
+        .fillColor(C.white)
+        .text('GUZMÁN MOTORS', px, py + 100, {
+          width: 258,
+          align: 'center',
+          characterSpacing: 2,
+        });
+    };
+
+    const drawPanelPlate = (px: number, py: number) => {
+      doc.rect(px, py, 258, 150).fill(C.panel);
+      doc
+        .font('Helvetica')
+        .fontSize(8.5)
+        .fillColor(C.mut)
+        .text('Consultá más fotos en guzmanmotors.com.ar', px, py + 71, {
+          width: 258,
+          align: 'center',
+        });
+    };
+
+    // ==================== PÁGINA 1: PORTADA ====================
+    doc.rect(0, 0, 842, 595).fill(C.carbon);
+
+    if (img1) {
+      drawCover(img1, 0, 0, 842, 595);
+
+      // Overlay inferior (legibilidad)
+      const g = doc.linearGradient(0, 260, 0, 595);
+      g.stop(0, C.carbon, 0).stop(0.45, C.carbon, 0.55).stop(1, C.carbon, 0.96);
+      doc.rect(0, 260, 842, 335).fill(g);
+
+      // Overlay superior sutil
+      const g2 = doc.linearGradient(0, 0, 0, 120);
+      g2.stop(0, C.carbon, 0.55).stop(1, C.carbon, 0);
+      doc.rect(0, 0, 842, 120).fill(g2);
+    } else {
+      // Portada tipográfica: título como marca de agua gigante
+      doc
+        .font('Helvetica-BoldOblique')
+        .fontSize(120)
+        .fillColor(C.white)
+        .fillOpacity(0.05)
+        .text(remolque.titulo || 'Remolque', 40, 180, { width: 762 });
+      doc.fillOpacity(1);
+    }
+
+    // Logos arriba-izquierda (blancos: solo sobre fondo oscuro)
+    if (fs.existsSync(logoPath)) {
+      doc.image(logoPath, 40, 30, { width: 34 });
+    }
+    if (fs.existsSync(letrasPath)) {
+      doc.image(letrasPath, 84, 38, { width: 118 });
+    }
+
+    // Arriba-derecha
+    doc
+      .font('Helvetica-Bold')
+      .fontSize(8.5)
+      .fillColor(C.white)
+      .fillOpacity(0.95)
+      .text('FICHA TÉCNICA', 542, 34, {
+        width: 260,
+        align: 'right',
+        characterSpacing: 3,
+      });
+    doc.fillOpacity(1);
+    doc
+      .font('Helvetica-Bold')
+      .fontSize(7)
+      .fillColor(C.petrolBright)
+      .text('GUZMÁN MOTORS · CONCESIONARIA OFICIAL', 542, 48, {
+        width: 260,
+        align: 'right',
+        characterSpacing: 2,
+      });
+
+    // Bloque inferior-izquierdo
+    const eyebrow = [remolque.condicion, remolque.categoria, remolque.marca]
+      .filter((x): x is string => Boolean(x))
+      .map((x) => x.toUpperCase())
+      .join('  ·  ');
+    if (eyebrow) {
+      doc
+        .font('Helvetica-Bold')
+        .fontSize(9)
+        .fillColor(C.petrolBright)
+        .text(eyebrow, 40, 418, { characterSpacing: 2.5, lineBreak: false });
+    }
+
+    const tituloRaw = remolque.titulo || 'Remolque';
+    const titleSize = tituloRaw.length <= 34 ? 42 : 30;
+    doc.font('Helvetica-BoldOblique').fontSize(titleSize);
+    const twoLineH =
+      doc.heightOfString('Mg\nMg', { width: 640, lineGap: -4 }) + 2;
+    let tituloFit = tituloRaw;
+    while (
+      doc.heightOfString(tituloFit, { width: 640, lineGap: -4 }) > twoLineH &&
+      tituloFit.length > 2
+    ) {
+      tituloFit =
+        (tituloFit.endsWith('…')
+          ? tituloFit.slice(0, -2)
+          : tituloFit.slice(0, -1)) + '…';
+    }
+    doc.fillColor(C.white).text(tituloFit, 40, 436, {
+      width: 640,
+      lineGap: -4,
+    });
+    const titleH = doc.heightOfString(tituloFit, { width: 640, lineGap: -4 });
+
+    // Barra petrol
+    const barY = 436 + titleH + 14;
+    doc.rect(40, barY, 64, 4).fill(C.petrolBright);
+
+    // Subtítulo: marca modelo — tipoCarroceria (los que existan)
+    const marcaModelo = [remolque.marca, remolque.modelo]
+      .filter(Boolean)
+      .join(' ');
+    const subtitulo = [marcaModelo, remolque.tipoCarroceria]
+      .filter(Boolean)
+      .join(' — ');
+    if (subtitulo) {
+      doc
+        .font('Helvetica')
+        .fontSize(10.5)
+        .fillColor(C.white)
+        .fillOpacity(0.85)
+        .text(subtitulo, 40, barY + 4 + 14, { width: 640 });
+      doc.fillOpacity(1);
+    }
+
+    // Abajo-derecha
+    doc
+      .font('Helvetica')
+      .fontSize(8)
+      .fillColor(C.white)
+      .fillOpacity(0.75)
+      .text('www.guzmanmotors.com.ar', 542, 560, {
+        width: 260,
+        align: 'right',
+        characterSpacing: 2,
+      });
+    doc.fillOpacity(1);
+
+    // ==================== PÁGINA 2: CARACTERÍSTICAS TÉCNICAS ====================
+    doc.addPage({ size: 'A4', layout: 'landscape', margin: 0 });
+    drawBrandBand();
+    drawSectionBand(40, 480, 'CARACTERÍSTICAS TÉCNICAS');
+
+    // Zona derecha: placas de foto
+    const extraImg = img2 ?? img3;
+    if (img2 && img3) {
+      drawPhotoPlate(img2, 544, 96);
+      drawPhotoPlate(img3, 544, 258);
+    } else if (extraImg) {
+      drawPhotoPlate(extraImg, 544, 96);
+      drawCarbonPlate(544, 258);
+    } else {
+      drawCarbonPlate(544, 96);
+      drawPanelPlate(544, 258);
+    }
+
+    drawContactBand();
+
+    // ===== Tabla agrupada =====
+    type Row = { label: string; value: string };
+    const row = (label: string, value: unknown): Row | null =>
+      value === undefined || value === null || value === ''
+        ? null
+        : { label, value: String(value) };
+    const mm = (v?: number) =>
+      v === undefined || v === null ? undefined : `${v} mm`;
+
+    const groups = [
+      {
+        name: 'INFORMACIÓN GENERAL',
+        rows: [
+          row('Condición', remolque.condicion),
+          row('Categoría', remolque.categoria),
+          row('Marca', remolque.marca),
+          row('Modelo', remolque.modelo),
+          row('Tipo de carrocería', remolque.tipoCarroceria),
+          row('Cantidad de ejes', remolque.cantidadEjes),
+          row('Capacidad de carga', remolque.capacidadCarga),
+          row(
+            'Tara',
+            remolque.tara !== undefined && remolque.tara !== null
+              ? `${remolque.tara} kg`
+              : undefined,
+          ),
+          row('PBTC', remolque.pbtc),
+          row('Garantía', remolque.garantia),
+          row('Estado', remolque.estado),
+        ],
+      },
+      {
+        name: 'CHASIS',
+        rows: [
+          row('Tipo', remolque.chasis?.tipo),
+          row('Material', remolque.chasis?.material),
+          row('Piso (espesor de chapa)', remolque.chasis?.pisoChapaEspesor),
+          row(
+            'Ejes tubulares (diámetro)',
+            remolque.chasis?.ejesTubularesDiametro,
+          ),
+          row('Paragolpe', remolque.chasis?.paragolpe),
+          row('Enganche de emergencia', remolque.chasis?.engancheEmergencia),
+        ],
+      },
+      {
+        name: 'DIMENSIONES',
+        rows: [
+          row('Largo interior', mm(remolque.dimensiones?.largoInterior)),
+          row('Ancho exterior', mm(remolque.dimensiones?.anchoExterior)),
+          row('Altura de baranda', mm(remolque.dimensiones?.alturaBaranda)),
+          row('Altura de frente', mm(remolque.dimensiones?.alturaFrente)),
+          row(
+            'Altura de contrafrente',
+            mm(remolque.dimensiones?.alturaContrafrente),
+          ),
+          row('Altura piso al piso', mm(remolque.dimensiones?.alturaPisoAlPiso)),
+        ],
+      },
+      {
+        name: 'EJES Y SUSPENSIÓN',
+        rows: [
+          row('Tipo de ejes', remolque.ejesSuspension?.tipoEjes),
+          row('Llantas', remolque.ejesSuspension?.llantas),
+          row('Suspensión', remolque.ejesSuspension?.suspension),
+          row('Frenos', remolque.ejesSuspension?.frenos),
+        ],
+      },
+      {
+        name: 'CARROCERÍA',
+        rows: [
+          row('Tipo', remolque.carroceria?.tipo),
+          row('Material', remolque.carroceria?.material),
+          row('Pintura', remolque.carroceria?.pintura),
+          row('Tratamiento', remolque.carroceria?.tratamiento),
+        ],
+      },
+    ]
+      .map((g) => ({
+        name: g.name,
+        rows: g.rows.filter((r): r is Row => r !== null),
+      }))
+      .filter((g) => g.rows.length > 0);
+
+    const TABLE_MAX_Y = 500;
+
+    // Altura de fila dinámica: valores largos envuelven a 2 líneas (sin "…")
+    type SizedRow = Row & { h: number };
+    const sizeRow = (r: Row): SizedRow => {
+      doc.font('Helvetica-Bold').fontSize(8.5);
+      const vh = doc.heightOfString(r.value, { width: 164 });
+      return { ...r, h: vh > 11 ? 29 : 17 };
+    };
+
+    const drawGroupChunk = (name: string, chunk: SizedRow[], gy: number) => {
+      const h = chunk.reduce((acc, r) => acc + r.h, 0);
+
+      // Celda de categoría (sin hairlines internas: las filas no la cruzan)
+      doc.rect(40, gy, 118, h).fill(C.panel);
+      doc.font('Helvetica-Bold').fontSize(8.5).fillColor(C.ink);
+      const nameH = doc.heightOfString(name, { width: 102 });
+      doc.text(name, 48, gy + Math.max(3, (h - nameH) / 2), { width: 102 });
+
+      // Filas
+      let ry = gy;
+      chunk.forEach((r, i) => {
+        doc
+          .font('Helvetica')
+          .fontSize(8.5)
+          .fillColor(C.mut)
+          .text(r.label, 166, ry + 4.5, {
+            width: 166,
+            height: 12,
+            ellipsis: true,
+          });
+        doc
+          .font('Helvetica-Bold')
+          .fontSize(8.5)
+          .fillColor(C.ink)
+          .text(r.value, 348, ry + 4.5, {
+            width: 164,
+            height: r.h - 8,
+            ellipsis: true,
+          });
+        // La línea de fila arranca en x=158 para NO tachar la celda de categoría;
+        // la última fila del grupo cierra el borde inferior completo.
+        const isLast = i === chunk.length - 1;
+        doc
+          .moveTo(isLast ? 40 : 158, ry + r.h)
+          .lineTo(520, ry + r.h)
+          .strokeColor(C.hair)
+          .lineWidth(0.7)
+          .stroke();
+        ry += r.h;
+      });
+
+      // Bordes verticales del grupo
+      [40, 158, 340, 520].forEach((vx) => {
+        doc
+          .moveTo(vx, gy)
+          .lineTo(vx, gy + h)
+          .strokeColor(C.hair)
+          .lineWidth(0.7)
+          .stroke();
+      });
+    };
+
+    let ty = 118;
+    for (const group of groups) {
+      const remaining = group.rows.map(sizeRow);
+      while (remaining.length) {
+        const chunk: SizedRow[] = [];
+        let ch = 0;
+        while (remaining.length && ty + ch + remaining[0].h <= TABLE_MAX_Y) {
+          const r = remaining.shift() as SizedRow;
+          chunk.push(r);
+          ch += r.h;
+        }
+        if (!chunk.length) {
+          doc.addPage({ size: 'A4', layout: 'landscape', margin: 0 });
+          drawBrandBand();
+          drawSectionBand(40, 480, 'CARACTERÍSTICAS TÉCNICAS (CONT.)');
+          drawContactBand();
+          ty = 118;
+          continue;
+        }
+        drawGroupChunk(group.name, chunk, ty);
+        ty += ch;
       }
     }
 
-    // Footer página 2
-    drawFooter();
-
-    // ==================== PÁGINA 3: EQUIPAMIENTO (si hay) ====================
+    // ==================== PÁGINA 3+: EQUIPAMIENTO (si hay) ====================
     if (
       remolque.equipamientoSerie?.length ||
       remolque.equipamientoOpcional?.length
     ) {
-      doc.addPage();
+      const serie = [...(remolque.equipamientoSerie ?? [])];
+      const opcional = [...(remolque.equipamientoOpcional ?? [])];
+      const MAX_ITEM_BOTTOM = 527;
 
-      // Fondo GM
-      doc.rect(0, 0, 595, 842).fill(colors.bg);
+      const measureItem = (text: string): number => {
+        doc.font('Helvetica').fontSize(9);
+        return doc.heightOfString(text, { width: 350 }) + 8;
+      };
 
-      // Header - Solo logo de letras grande
-      if (fs.existsSync(letrasPath)) {
-        doc.image(letrasPath, 190, 35, { width: 215 });
-      }
-
-      y = 135;
-
-      // Crear dos columnas para equipamiento
-      const col1X = 50;
-      const col2X = 315;
-      const colWidth = 230;
-
-      // EQUIPAMIENTO DE SERIE
-      if (remolque.equipamientoSerie?.length) {
+      const drawEquipItem = (x: number, y: number, text: string) => {
+        doc.font('Helvetica-Bold').fontSize(10).fillColor(C.petrol).text('+', x, y);
         doc
-          .fontSize(13)
-          .font('Helvetica-Bold')
-          .fillColor(colors.petrol)
-          .text('EQUIPAMIENTO DE SERIE', col1X, y, { characterSpacing: 2.5 });
+          .font('Helvetica')
+          .fontSize(9)
+          .fillColor(C.ink)
+          .text(text, x + 14, y + 1, { width: 350 });
+      };
 
-        let y1 = y + 30;
-
-        remolque.equipamientoSerie.forEach((item) => {
-          if (y1 > 380) return; // Dejar más espacio para imagen
-
-          doc.rect(col1X, y1 + 3, 3, 3).fill(colors.petrol);
-          doc
-            .fontSize(9)
-            .font('Helvetica')
-            .fillColor(colors.text)
-            .text(item, col1X + 12, y1, { width: colWidth - 12 });
-
-          y1 += 16;
-        });
-      }
-
-      // EQUIPAMIENTO OPCIONAL
-      if (remolque.equipamientoOpcional?.length) {
+      const drawEquipSubtitle = (x: number, y: number, label: string) => {
         doc
-          .fontSize(13)
           .font('Helvetica-Bold')
-          .fillColor(colors.petrol)
-          .text('EQUIPAMIENTO OPCIONAL', col2X, y, { characterSpacing: 2.5 });
+          .fontSize(8)
+          .fillColor(C.mut)
+          .text(label, x, y, { characterSpacing: 2 });
+      };
 
-        let y2 = y + 30;
+      const newEquipPage = () => {
+        doc.addPage({ size: 'A4', layout: 'landscape', margin: 0 });
+        drawBrandBand();
+        drawSectionBand(40, 762, 'EQUIPAMIENTO');
+        drawContactBand();
+      };
 
-        remolque.equipamientoOpcional.forEach((item) => {
-          if (y2 > 380) return; // Dejar más espacio para imagen
+      if (serie.length && opcional.length) {
+        // DE SERIE col izquierda · OPCIONAL col derecha
+        while (serie.length || opcional.length) {
+          newEquipPage();
+          const before = serie.length + opcional.length;
 
-          doc.rect(col2X, y2 + 3, 3, 3).fill(colors.petrol);
-          doc
-            .fontSize(9)
-            .font('Helvetica')
-            .fillColor(colors.text)
-            .text(item, col2X + 12, y2, { width: colWidth - 12 });
+          let yL = 132;
+          if (serie.length) {
+            drawEquipSubtitle(40, yL, 'DE SERIE');
+            yL += 16;
+          }
+          while (serie.length) {
+            const h = measureItem(serie[0]);
+            if (yL + h > MAX_ITEM_BOTTOM) break;
+            drawEquipItem(40, yL, serie.shift() as string);
+            yL += h;
+          }
 
-          y2 += 16;
-        });
-      }
+          let yR = 132;
+          if (opcional.length) {
+            drawEquipSubtitle(432, yR, 'OPCIONAL');
+            yR += 16;
+          }
+          while (opcional.length) {
+            const h = measureItem(opcional[0]);
+            if (yR + h > MAX_ITEM_BOTTOM) break;
+            drawEquipItem(432, yR, opcional.shift() as string);
+            yR += h;
+          }
 
-      // Agregar segunda/tercera imagen en el espacio inferior - Usar foto sin fondo si existe
-      const thirdPageImageUrl =
-        remolque.fotoSinFondo2?.secure_url ||
-        remolque.imagenes?.[remolque.imagenes.length > 2 ? 2 : 1]?.secure_url;
+          if (serie.length + opcional.length === before) {
+            // Ítem más alto que la página: forzar avance para no ciclar
+            if (serie.length) drawEquipItem(40, yL, serie.shift() as string);
+            else if (opcional.length)
+              drawEquipItem(432, yR, opcional.shift() as string);
+          }
+        }
+      } else {
+        // Una sola lista: usa ambas columnas balanceadas
+        const items = serie.length ? serie : opcional;
+        const label = serie.length ? 'DE SERIE' : 'OPCIONAL';
+        while (items.length) {
+          newEquipPage();
+          const before = items.length;
+          const half = Math.ceil(items.length / 2);
+          let placed = 0;
 
-      if (thirdPageImageUrl) {
-        try {
-          const axios = (await import('axios')).default;
-          const response = await axios.get(thirdPageImageUrl, {
-            responseType: 'arraybuffer',
-          });
-          const imageBuffer = Buffer.from(response.data);
-          // Imagen más arriba y con mejor proporción
-          doc.image(imageBuffer, 50, 390, { width: 495, height: 300 });
-        } catch (error) {
-          console.error('Error loading third page image:', error);
+          let yL = 132;
+          drawEquipSubtitle(40, yL, label);
+          yL += 16;
+          while (items.length && placed < half) {
+            const h = measureItem(items[0]);
+            if (yL + h > MAX_ITEM_BOTTOM) break;
+            drawEquipItem(40, yL, items.shift() as string);
+            yL += h;
+            placed++;
+          }
+
+          let yR = 148;
+          while (items.length) {
+            const h = measureItem(items[0]);
+            if (yR + h > MAX_ITEM_BOTTOM) break;
+            drawEquipItem(432, yR, items.shift() as string);
+            yR += h;
+          }
+
+          if (items.length === before) {
+            drawEquipItem(40, yL, items.shift() as string);
+          }
         }
       }
-
-      // Footer página 3
-      drawFooter();
     }
 
     doc.end();
