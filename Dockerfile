@@ -20,6 +20,8 @@ COPY package*.json ./
 RUN npm ci --omit=dev && npm cache clean --force
 
 COPY --from=builder /app/dist ./dist
+# Assets de los PDF (logos): el controller los lee de src/images en runtime
+COPY --from=builder /app/src/images ./src/images
 
 EXPOSE 3000
 
