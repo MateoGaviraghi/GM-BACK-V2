@@ -17,7 +17,8 @@ Serves a separate frontend (public catalog + admin panel). Hosted on Render's fr
 
 | Ask about | Open | What it holds |
 |---|---|---|
-| **Why anything is the way it is** | `git log` (commit messages, Spanish/English mix) | There is **no decision log, ADR, CHANGELOG or docs folder** in this repo. Commit messages are the only record of why. |
+| **Why anything is the way it is** | `MEMORY.md` (from 2026-11-03: `D-`, `G-`, `TD-`, `OQ-` entries) + `git log` for anything older | decisions, what was discarded and why, gotchas, debt, open questions. **Read IN FULL before touching an area it covers.** Before 2026-11-03 commit messages are the only record. |
+| What was done, session by session, and the current state | `WORKLOG.md` | ESTADO (overwritten each `/cerrar`) + dated REGISTRO entries with files, verification and gates. |
 | Required env vars and their rules | `src/config/env.validation.ts` | Joi schema validated at boot: what is required, min lengths, Cloudinary URL-or-split rule. Never read `.env` values. |
 | Bootstrap: prefix, CORS, pipes, helmet | `src/main.ts` | global `api` prefix, ValidationPipe options, CORS per `NODE_ENV`. |
 | Modules wired, DB, rate limits | `src/app.module.ts` | imported modules, Mongo connection, Throttler tiers + global guard. |
